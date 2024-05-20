@@ -1,0 +1,58 @@
+# # Usamos Node.js 
+# FROM node:18-alpine
+
+# # Establecemos el directorio 
+# WORKDIR /usr/src/app
+
+# # Copiamos .json
+# COPY package*.json ./
+
+# # Instalamos las dependencias 
+# RUN npm install
+
+# # Copiamos el resto del código
+# COPY . .
+
+# # nuestra aplicación correrá
+# EXPOSE 3000
+
+# # ejecutar la aplicación
+# CMD [ "npm", "run", "dev" ]
+# Etapa 1: Construcción de la imagen
+
+
+
+FROM node:18-alpine AS builder
+
+# Establecemos el directorio 
+WORKDIR /usr/src/app
+
+# Copiamos los archivos .json 
+COPY package*.json ./
+
+# Instalamos dependencias 
+RUN npm install
+
+# Copiamos el resto del código 
+COPY . .
+
+# Etapa 2: Imagen de producción
+FROM node:18-alpine
+
+# Establecemos el directorio de trabajo dentro del contenedor
+WORKDIR /usr/src/app
+
+# Copiamos solo los archivos necesarios desde la etapa de construcción
+COPY --from=builder /usr/src/app/package*.json ./
+
+# Instalamos solo las dependencias de producción
+RUN npm ci --only=production
+
+# Copiamos el resto del código de la aplicación desde la etapa de construcción
+COPY --from=builder /usr/src/app ./
+
+# Exponemos el puerto en el que nuestra aplicación correrá
+EXPOSE 3000
+
+# Comando para ejecutar la aplicación
+CMD ["npm", "start", "dev"]
